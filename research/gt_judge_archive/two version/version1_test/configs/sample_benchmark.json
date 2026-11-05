@@ -1,0 +1,202 @@
+[
+  {
+    "id": 1,
+    "category": "Coding",
+    "question": "Write a Python function to check whether a string is a palindrome, ignoring case and non-alphanumeric characters. Explain briefly.",
+    "answer_a": "def is_palindrome(s):\n    return s == s[::-1]\n\nJust reverse the string and compare.",
+    "answer_b": "def is_palindrome(s):\n    t = [c.lower() for c in s if c.isalnum()]\n    return t == t[::-1]\n\nWe normalise by keeping only alphanumeric characters and lower-casing, then compare the cleaned list to its reverse. O(n) time, O(n) space.",
+    "human_preference": "B",
+    "rationale": "The better answer handles case and punctuation as the prompt requires and states complexity; the worse one fails 'A man, a plan' and ignores the normalisation requirement.",
+    "pilot": true
+  },
+  {
+    "id": 2,
+    "category": "Coding",
+    "question": "How do you safely read a large file line by line in Python without loading it all into memory?",
+    "answer_a": "You can use f.readlines() to get all the lines and then loop over them. It's simple and works fine for files.",
+    "answer_b": "Iterate over the file object directly, which streams one line at a time:\n\nwith open(path) as f:\n    for line in f:\n        process(line)\n\nThe context manager guarantees the handle is closed, and the iterator keeps only one line resident, so memory stays flat regardless of file size.",
+    "human_preference": "B",
+    "rationale": "readlines() loads the whole file into memory, which is exactly what the question asks to avoid; the streaming iterator is the correct idiom.",
+    "pilot": true
+  },
+  {
+    "id": 3,
+    "category": "Coding",
+    "question": "Explain what a Python list comprehension is and give one example.",
+    "answer_a": "A list comprehension builds a list from an iterable in a single expression: [x*x for x in range(5)] produces [0, 1, 4, 9, 16]. It is generally more readable and slightly faster than an equivalent append loop.",
+    "answer_b": "List comprehensions are a way to make lists quickly. For example [x for x in range(5)] gives you a list. They are shorter than loops.",
+    "human_preference": "Tie",
+    "rationale": "Both are correct and roughly equivalent in quality; the first is marginally more complete but not decisively better \u2014 a genuine near-tie.",
+    "pilot": true
+  },
+  {
+    "id": 4,
+    "category": "Coding",
+    "question": "Should I use `is` or `==` to compare a variable to None in Python?",
+    "answer_a": "Use `is`: `if x is None`. None is a singleton, so identity comparison is correct, faster, and can't be broken by a custom __eq__. `==` can misbehave if the object overloads equality.",
+    "answer_b": "Use `==`, like `if x == None`. It checks equality which is what you want when comparing values.",
+    "human_preference": "A",
+    "rationale": "PEP 8 and correctness both call for `is None`; `== None` can be overridden by __eq__ and is discouraged.",
+    "pilot": true
+  },
+  {
+    "id": 5,
+    "category": "Math & Logic",
+    "question": "A bat and a ball cost $1.10 together. The bat costs $1.00 more than the ball. How much is the ball?",
+    "answer_a": "Let the ball cost b. Then bat = b + 1.00, and b + (b + 1.00) = 1.10, so 2b = 0.10, b = $0.05. The ball is 5 cents (bat is $1.05).",
+    "answer_b": "The ball is $0.10, since the bat is $1.00 and 1.00 + 0.10 = 1.10.",
+    "human_preference": "A",
+    "rationale": "The worse answer falls for the classic trap; the better one sets up and solves the equation correctly to $0.05.",
+    "pilot": true
+  },
+  {
+    "id": 6,
+    "category": "Math & Logic",
+    "question": "Is 91 a prime number? Show your reasoning.",
+    "answer_a": "Yes, 91 is prime because it's odd and not divisible by 3 or 5.",
+    "answer_b": "No. 91 = 7 x 13, so it has divisors other than 1 and itself. It's composite.",
+    "human_preference": "B",
+    "rationale": "91 = 7 x 13; the worse answer stops checking too early and misses the factor 7.",
+    "pilot": true
+  },
+  {
+    "id": 7,
+    "category": "Math & Logic",
+    "question": "What is the probability of rolling a sum of 7 with two fair six-sided dice?",
+    "answer_a": "There are 6 ordered outcomes summing to 7: (1,6),(2,5),(3,4),(4,3),(5,2),(6,1), out of 36 equally likely outcomes, so 6/36 = 1/6.",
+    "answer_b": "There are 36 outcomes and 7 can be made a few ways, so it's about 6/36 which is 1/6.",
+    "human_preference": "Tie",
+    "rationale": "Both reach 1/6; the first enumerates the outcomes rigorously, the second hand-waves but lands correctly \u2014 close in quality.",
+    "pilot": true
+  },
+  {
+    "id": 8,
+    "category": "Math & Logic",
+    "question": "If all Bloops are Razzies and all Razzies are Lazzies, are all Bloops definitely Lazzies?",
+    "answer_a": "Yes. This is a transitive chain: Bloops \u2286 Razzies \u2286 Lazzies, therefore Bloops \u2286 Lazzies. The conclusion follows necessarily.",
+    "answer_b": "Not necessarily, because we don't know if every Bloop was counted.",
+    "human_preference": "A",
+    "rationale": "The relation is transitive, so the conclusion is guaranteed; the worse answer misreads a valid syllogism as uncertain.",
+    "pilot": true
+  },
+  {
+    "id": 9,
+    "category": "Writing & Reasoning",
+    "question": "Give feedback on this opening line for a cover letter: 'I am writing to apply for the job you posted.'",
+    "answer_a": "It's a fine opening line. It tells them you are applying for the job, which is the point of a cover letter, so it works.",
+    "answer_b": "It's functional but generic and forgettable. Name the specific role and company and lead with a hook: e.g., 'As a data engineer who has cut pipeline costs by 30%, I was excited to see your Senior Data Engineer opening at Acme.' Specificity signals genuine interest and immediately frames your value.",
+    "human_preference": "B",
+    "rationale": "The better answer diagnoses the weakness (generic) and gives a concrete, improved rewrite; the worse one endorses a weak line without insight.",
+    "pilot": true
+  },
+  {
+    "id": 10,
+    "category": "Writing & Reasoning",
+    "question": "Explain the difference between 'affect' and 'effect' to a learner.",
+    "answer_a": "Affect and effect sound the same but mean different things. One is about causing and the other is about results. People mix them up a lot.",
+    "answer_b": "'Affect' is usually a verb meaning to influence ('the rain affected traffic'). 'Effect' is usually a noun meaning the result ('the effect was chaos'). Quick trick: Affect = Action (verb), Effect = End result (noun).",
+    "human_preference": "B",
+    "rationale": "The better answer gives the part-of-speech rule, examples, and a mnemonic; the worse one gestures at the distinction without making it usable.",
+    "pilot": true
+  },
+  {
+    "id": 11,
+    "category": "Writing & Reasoning",
+    "question": "Summarise the moral of the tortoise and the hare in one sentence.",
+    "answer_a": "The lesson is that being consistent and not overconfident helps you win in the end, even against faster opponents.",
+    "answer_b": "Slow and steady persistence beats talented complacency.",
+    "human_preference": "Tie",
+    "rationale": "Both capture the moral; the first is crisper, the second is wordier but accurate \u2014 a near-tie on substance.",
+    "pilot": true
+  },
+  {
+    "id": 12,
+    "category": "Writing & Reasoning",
+    "question": "Is it okay to start a sentence with 'because'?",
+    "answer_a": "No, you should never start a sentence with 'because' \u2014 it's a subordinating conjunction and it's grammatically wrong.",
+    "answer_b": "Yes, as long as the sentence is complete. 'Because it rained, we stayed in' is fine \u2014 the clause is followed by a main clause. Problems only arise with a sentence fragment like 'Because it rained.' standing alone.",
+    "human_preference": "B",
+    "rationale": "The prohibition is a myth; the better answer states the real condition (need a main clause), the worse one asserts a false absolute rule.",
+    "pilot": true
+  },
+  {
+    "id": 13,
+    "category": "Summarization",
+    "question": "Summarise: 'The committee met on Tuesday, reviewed the quarterly budget, approved two new hires, and postponed the office relocation decision until next quarter.'",
+    "answer_a": "On Tuesday the committee reviewed the quarterly budget, approved two new hires, and deferred the office-relocation decision to next quarter.",
+    "answer_b": "The committee had a meeting and talked about several things including money and hiring and the office, and made some decisions.",
+    "human_preference": "A",
+    "rationale": "The better summary preserves all four concrete facts; the worse one is vague and drops the specifics that matter.",
+    "pilot": true
+  },
+  {
+    "id": 14,
+    "category": "Summarization",
+    "question": "Give a one-line summary of a paper reporting that a new drug reduced symptoms in 60% of patients but caused nausea in 25%.",
+    "answer_a": "A new drug worked for most patients and had some side effects in the trial.",
+    "answer_b": "The drug relieved symptoms in 60% of patients but caused nausea in a quarter of them, indicating meaningful benefit tempered by a notable side-effect rate.",
+    "human_preference": "B",
+    "rationale": "The better summary keeps both key numbers and the benefit/risk framing; the worse one loses the quantitative findings entirely.",
+    "pilot": true
+  },
+  {
+    "id": 15,
+    "category": "Summarization",
+    "question": "Summarise this in a phrase: 'Sales rose in Q1, dipped in Q2, then recovered strongly in Q3.'",
+    "answer_a": "Sales went up, then down, then up again over three quarters.",
+    "answer_b": "A mid-year dip between a strong start and a strong finish.",
+    "human_preference": "Tie",
+    "rationale": "Both are faithful; the first is more evocative, the second more literal \u2014 comparable quality.",
+    "pilot": true
+  },
+  {
+    "id": 16,
+    "category": "Summarization",
+    "question": "Summarise the plot of Cinderella in one sentence, keeping the key turn.",
+    "answer_a": "A mistreated young woman attends a royal ball with magical help and wins the prince by being identified through a glass slipper she leaves behind.",
+    "answer_b": "A girl has a hard life but then things get better for her because of magic and a prince.",
+    "human_preference": "A",
+    "rationale": "The better summary preserves the defining plot mechanism (the slipper); the worse one is so generic it could describe many stories.",
+    "pilot": true
+  },
+  {
+    "id": 17,
+    "category": "Argumentation",
+    "question": "Argue briefly whether remote work increases productivity, acknowledging the other side.",
+    "answer_a": "Remote work can raise productivity by removing commutes and interruptions, and several firm-level studies report gains for focused individual tasks. But the effect is conditional: collaborative, ambiguous work often suffers without co-location, and outcomes depend heavily on management practices. The honest answer is 'it depends on the task and the org', not a blanket yes.",
+    "answer_b": "Remote work definitely increases productivity because people are happier at home and don't waste time commuting, so companies should always allow it.",
+    "human_preference": "A",
+    "rationale": "The better argument is balanced, conditions its claim, and concedes limits; the worse one overstates a one-sided case and ignores counter-evidence.",
+    "pilot": true
+  },
+  {
+    "id": 18,
+    "category": "Argumentation",
+    "question": "Make the case for and against a four-day work week in a few sentences.",
+    "answer_a": "For: compressing or reducing hours can sustain output while improving wellbeing and retention, as several trials have reported. Against: coverage-sensitive roles (healthcare, support) and client-facing schedules may not compress cleanly, and pay/coverage tradeoffs are unresolved. Net: promising for some sectors, not a universal prescription.",
+    "answer_b": "A four-day week is good because people get more rest, but some might say it's bad for business. Overall it seems like a nice idea.",
+    "human_preference": "A",
+    "rationale": "The better answer gives substantive points on both sides and a qualified conclusion; the worse one is superficial and non-committal.",
+    "pilot": true
+  },
+  {
+    "id": 19,
+    "category": "Argumentation",
+    "question": "Should city speed limits be lowered to 20 mph? Give a short reasoned take.",
+    "answer_a": "Lowering urban limits to 20 mph measurably reduces pedestrian fatalities because impact survival drops sharply below that speed, and travel-time costs in dense areas are small. The main tradeoffs are enforcement and driver compliance, which are addressable with road design.",
+    "answer_b": "Yes, lower speed limits save lives and there's no real downside, so every city should do it immediately.",
+    "human_preference": "A",
+    "rationale": "The better take cites the mechanism (survival vs. impact speed) and names the real tradeoff; the worse one asserts 'no downside', which is an overclaim.",
+    "pilot": true
+  },
+  {
+    "id": 20,
+    "category": "Argumentation",
+    "question": "Is it better to rent or to buy a home?",
+    "answer_a": "Buying is always better than renting because you build equity instead of throwing money away on rent.",
+    "answer_b": "It depends on horizon and local price-to-rent ratios: buying tends to win over long stays in markets with moderate ratios once transaction costs are amortised, while renting wins for short horizons, high-price markets, or when mobility has option value. There is no universal answer.",
+    "human_preference": "B",
+    "rationale": "The better answer identifies the deciding variables; the worse one repeats a popular but false absolute ('renting is throwing money away').",
+    "pilot": true
+  }
+]

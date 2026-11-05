@@ -1,0 +1,39 @@
+# GT-Judge default game configuration
+# All parameters referenced in Phase 1 formalization (NOTATION.md)
+
+pipeline:
+  name: "gt-judge-v1"
+  evaluator_count: 2  # n = |N|, minimum for adversarial debate
+
+model:
+  provider: "openai"                    # litellm provider key
+  evaluator_model: "gpt-4o-mini"        # model for Proposer/Challenger agents
+  temperature_debate: 0.7               # higher temp for diverse argument generation
+  temperature_calibration: 0.0          # deterministic for confidence reporting
+  max_tokens: 1024
+
+game1_debate:
+  rounds: 3                             # K = max debate rounds
+  lambda_token_cost: 0.001              # λ — token cost penalty per token
+  actions_proposer:
+    - "claim"
+    - "defend"
+    - "clarify"
+  actions_challenger:
+    - "attack"
+    - "counterexample"
+    - "concede"
+
+game2_calibration:
+  scoring_rule: "brier"                 # Proper scoring rule type
+  ground_truth_mode: "consensus_proxy"  # "benchmark" (human labels) or "consensus_proxy"
+
+game3_arbitration:
+  human_review_cost: 10.0               # C_H — cost of fallback to human review
+  beta_effort_scale: 0.1                # β — effort cost scaling factor
+  alpha_debate_influence: 0.3          # α — weight of debate prior in utility
+  alpha_d: 0.1                          # α_d — disagreement point offset constant
+  verdict_space:
+    - "A_wins"
+    - "B_wins"
+    - "Tie"

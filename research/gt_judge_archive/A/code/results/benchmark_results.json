@@ -1,0 +1,97 @@
+{
+  "config": "configs/default.yaml",
+  "mock": true,
+  "summary": {
+    "total_instances": 5,
+    "accuracy_pct": 100.0,
+    "flip_rate_pct": 0.0,
+    "mean_brier_score": 0.98375
+  },
+  "results": [
+    {
+      "id": 1,
+      "category": "Coding",
+      "forward": {
+        "verdict": "A_wins",
+        "confidence": 0.8751588310038119,
+        "tokens": 1280
+      },
+      "backward": {
+        "verdict": "B_wins",
+        "confidence": 0.8703208556149733,
+        "tokens": 1280
+      },
+      "matches_human": true,
+      "position_flip": false,
+      "calibration_brier": 0.98375
+    },
+    {
+      "id": 2,
+      "category": "Math & Logic",
+      "forward": {
+        "verdict": "A_wins",
+        "confidence": 0.8751588310038119,
+        "tokens": 1280
+      },
+      "backward": {
+        "verdict": "B_wins",
+        "confidence": 0.8703208556149733,
+        "tokens": 1280
+      },
+      "matches_human": true,
+      "position_flip": false,
+      "calibration_brier": 0.98375
+    },
+    {
+      "id": 3,
+      "category": "Writing & Reasoning",
+      "forward": {
+        "verdict": "A_wins",
+        "confidence": 0.8751588310038119,
+        "tokens": 1280
+      },
+      "backward": {
+        "verdict": "B_wins",
+        "confidence": 0.8703208556149733,
+        "tokens": 1280
+      },
+      "matches_human": true,
+      "position_flip": false,
+      "calibration_brier": 0.98375
+    },
+    {
+      "id": 4,
+      "category": "Summarization",
+      "forward": {
+        "verdict": "A_wins",
+        "confidence": 0.8751588310038119,
+        "tokens": 1280
+      },
+      "backward": {
+        "verdict": "B_wins",
+        "confidence": 0.8703208556149733,
+        "tokens": 1280
+      },
+      "matches_human": true,
+      "position_flip": false,
+      "calibration_brier": 0.98375
+    },
+    {
+      "id": 5,
+      "category": "Argumentation",
+      "forward": {
+        "verdict": "A_wins",
+        "confidence": 0.8751588310038119,
+        "tokens": 1280
+      },
+      "backward": {
+        "verdict": "B_wins",
+        "confidence": 0.8703208556149733,
+        "tokens": 1280
+      },
+      "matches_human": true,
+      "position_flip": false,
+      "calibration_brier": 0.98375
+    }
+  ]
+}

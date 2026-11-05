@@ -1,0 +1,47 @@
+# GT-Judge default game configuration
+# All parameters referenced in Phase 1 formalization (NOTATION.md)
+
+pipeline:
+  name: "gt-judge-v1"
+  evaluator_count: 2  # n = |N|, minimum for adversarial debate
+
+model:
+  provider: "openai"                    # one of: openai | anthropic | google
+  # Key is read from the matching env var automatically (see .env.example):
+  #   openai -> OPENAI_API_KEY, anthropic -> ANTHROPIC_API_KEY, google -> GOOGLE_API_KEY
+  evaluator_model: "gpt-4o-mini"        # model for Proposer/Challenger agents
+  # Example model strings per provider:
+  #   openai:    gpt-4o-mini, gpt-4o
+  #   anthropic: claude-3-5-haiku-latest, claude-3-5-sonnet-latest
+  #   google:    gemini-1.5-flash, gemini-1.5-pro
+  temperature_debate: 0.7               # higher temp for diverse argument generation
+  temperature_calibration: 0.0          # deterministic for confidence reporting
+  max_tokens: 1024
+
+game1_debate:
+  rounds: 3                             # K = max debate rounds
+  lambda_token_cost: 0.001              # λ — token cost penalty per token
+  actions_proposer:
+    - "claim"
+    - "defend"
+    - "clarify"
+  actions_challenger:
+    - "attack"
+    - "counterexample"
+    - "concede"
+
+game2_calibration:
+  scoring_rule: "brier"                 # Proper scoring rule type
+  ground_truth_mode: "consensus_proxy"  # "benchmark" (human labels) or "consensus_proxy"
+
+game3_arbitration:
+  human_review_cost: 10.0               # C_H — cost of fallback to human review
+  beta_effort_scale: 0.1                # β — effort cost scaling factor
+  alpha_debate_influence: 0.3          # α — weight of debate prior in utility
+  alpha_d: 0.1                          # α_d — disagreement point offset constant
+  correlation_correction: true         # §5: correlated-error correction on/off
+  prior_rho: 0.6                        # assumed evaluator correlation for single-item mode
+  verdict_space:
+    - "A_wins"
+    - "B_wins"
+    - "Tie"

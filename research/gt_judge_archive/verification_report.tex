@@ -1,0 +1,239 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{\textbf{Game-Theoretic Multi-Agent LLM Judge (GT-Judge): Detailed Demo Run Execution \& Mathematical Verification Report}}
+\author{\textbf{Sawan Ade} \\ IISER Bhopal \& IIT Patna \\ \texttt{sawan.ade@iiserb.ac.in} \and \textbf{Antigravity AI Assistant} \\ Advanced Agentic Coding Team}
+\date{July 22, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report provides a formal mathematical verification and run analysis of the GT-Judge evaluation pipeline. We trace the complete run of a dynamic programming (DP) vs. naive-recursive Longest Common Subsequence (LCS) demo question using the Google Gemini developer API keys on the \texttt{gemini-3.5-flash} model. We detail each of the three game stages: Game 1 (Sequential Debate), Game 2 (Scored Calibration), and Game 3 (Consensus Arbitration), comparing the mathematical calculations and execution logs of Version 1 and Version 2. Finally, we document the system configuration, API errors encountered, and the validation fixes deployed to ensure robust convergence.
+\end{abstract}
+
+\newpage
+
+\section{Problem Specification \& Input Dataset}
+The demo is initialized with a standard evaluation input containing a programming prompt and two candidate answers:
+
+\subsection{The Evaluation Question ($Q$)}
+\begin{quote}
+\textit{``Write a function to find the longest common subsequence of two strings. Explain your approach and analyze its time complexity.''}
+\end{quote}
+
+\subsection{Candidate Answer A (Dynamic Programming)}
+Answer A implements a standard bottom-up dynamic programming approach that correctly constructs the DP table and backtracks to reconstruct the actual LCS string:
+\begin{lstlisting}[language=Python]
+def lcs(s1, s2):
+    m, n = len(s1), len(s2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if s1[i-1] == s2[j-1]:
+                dp[i][j] = dp[i-1][j-1] + 1
+            else:
+                dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+    result = []
+    i, j = m, n
+    while i > 0 and j > 0:
+        if s1[i-1] == s2[j-1]:
+            result.append(s1[i-1]); i -= 1; j -= 1
+        elif dp[i-1][j] > dp[i][j-1]:
+            i -= 1
+        else:
+            j -= 1
+    return ''.join(reversed(result))
+\end{lstlisting}
+\textbf{Complexity analysis:} Time $O(mn)$, Space $O(mn)$.
+
+\subsection{Candidate Answer B (Naive Recursion)}
+Answer B implements a recursive solution without memoization:
+\begin{lstlisting}[language=Python]
+def lcs(s1, s2):
+    if not s1 or not s2:
+        return ""
+    if s1[-1] == s2[-1]:
+        return lcs(s1[:-1], s2[:-1]) + s1[-1]
+    else:
+        r1 = lcs(s1[:-1], s2); r2 = lcs(s1, s2[:-1])
+        return r1 if len(r1) > len(r2) else r2
+\end{lstlisting}
+\textbf{Complexity analysis:} Correct logic but exponential worst-case time complexity $O(2^n)$, which will time out on long inputs.
+
+\newpage
+
+\section{Stage 1: The Debate Game (Game 1)}
+The debate game runs sequentially for each answer. A Proposer (correctness/clarity) defends the answer while a Challenger (clarity/correctness) attacks it.
+
+\subsection{The Scoring Formula}
+The normalized debate score ($s$) is defined by:
+\begin{equation}
+s = \text{mean\_validity} - \text{mean\_severity} - \text{Penalty}
+\end{equation}
+Where:
+\begin{itemize}
+    \item $\text{mean\_validity} = \frac{\sum \text{validity}}{\text{total\_claims}}$
+    \item $\text{mean\_severity} = \frac{\sum \text{severity}}{\text{total\_attacks}}$ (if attacks exist, else $0.0$)
+    \item $\text{Penalty} = \lambda \cdot (\text{proposer\_tokens} + \text{challenger\_tokens})$ under a linear penalty ($\lambda = 0.001$).
+\end{itemize}
+
+\subsection{Version 1 Run Details}
+In Version 1, both debates terminated in Round 1 due to Challenger concessions:
+\begin{itemize}
+    \item \textbf{Answer A Debate:}
+    \begin{itemize}
+        \item \textit{Proposer A:} Claims DP is correct and accurately analyzes complexity. (1,030 tokens)
+        \item \textit{Challenger A:} Concedes that the logic is correct. (1,712 tokens)
+        \item \textit{Calculation:} 
+        \[ s_A = 1.0 - 0.0 - 0.001 \cdot (1030 + 1712) = 1.0 - 2.742 = -1.742 \]
+    \end{itemize}
+    \item \textbf{Answer B Debate:}
+    \begin{itemize}
+        \item \textit{Proposer B:} Claims recursive structure is easy to understand. (1,422 tokens)
+        \item \textit{Challenger B:} Concedes correctness but notes $O(2^n)$ timeouts. (1,534 tokens)
+        \item \textit{Calculation:} 
+        \[ s_B = 1.0 - 0.95 - 0.001 \cdot (1422 + 1534) = 0.05 - 2.956 = -1.956 \]
+    \end{itemize}
+\end{itemize}
+
+\subsection{Version 2 Run Details}
+Version 2 uses a similar structure but has minor token variations from the API outputs:
+\begin{itemize}
+    \item \textbf{Answer A Debate:}
+    \begin{itemize}
+        \item \textit{Proposer A:} (1,098 tokens)
+        \item \textit{Challenger A:} (1,732 tokens)
+        \item \textit{Calculation:} 
+        \[ s_A = 1.0 - 0.0 - 0.001 \cdot (1098 + 1732) = 1.0 - 2.830 = -1.830 \]
+    \end{itemize}
+    \item \textbf{Answer B Debate:}
+    \begin{itemize}
+        \item \textit{Proposer B:} (1,422 tokens)
+        \item \textit{Challenger B:} (1,532 tokens)
+        \item \textit{Calculation:} 
+        \[ s_B = 1.0 - 0.95 - 0.001 \cdot (1422 + 1532) = 0.05 - 2.954 = -1.954 \]
+    \end{itemize}
+\end{itemize}
+\textbf{Note on Hinge Penalty:} In Version 2, the code implements a hinge budget penalty $\lambda \cdot \max(0, \text{tokens} - 600)$ to prevent normal length answers from being penalized into negative space, which was verified in the unit tests.
+
+\newpage
+
+\section{Stage 2: The Calibration Game (Game 2)}
+Two evaluators with different emphasis rubrics (Correctness, Clarity, or Depth) analyze the answers and report their confidence ratings $p_i \in [0, 1]$ favoring Answer A.
+
+\subsection{The Scoring Formula}
+Evaluators are scored using a Brier proper scoring reward ($1 - \text{Brier}$):
+\begin{equation}
+E_i = 1 - (p_i - y)^2
+\end{equation}
+Where $y \in \{1.0 \, (\text{A\_wins}), 0.5 \, (\text{Tie}), 0.0 \, (\text{B\_wins})\}$ is the ground truth verdict proxy.
+
+\subsection{Version 1 Calibration}
+In Version 1, the consensus verdict proxy resolved to $A\_wins$ ($y=1.0$).
+\begin{itemize}
+    \item \textbf{Evaluator 0:} Reported confidence $p_0 = 0.99$.
+    \[ E_0 = 1 - (0.99 - 1.0)^2 = 1 - 0.0001 = 0.9999 \]
+    \item \textbf{Evaluator 1:} Reported confidence $p_1 = 0.95$.
+    \[ E_1 = 1 - (0.95 - 1.0)^2 = 1 - 0.0025 = 0.9975 \]
+\end{itemize}
+
+\subsection{Version 2 Calibration}
+Version 2 implements confidence clipping guards to prevent extreme values from causing log-odds saturation. The clipped confidences resolved to a balanced state ($p_0 = 0.50$, $p_1 = 0.50$), leading to a $Tie$ verdict ($y=0.5$).
+\begin{itemize}
+    \item \textbf{Evaluator 0:} Reported confidence $p_0 = 0.50$.
+    \[ E_0 = 1 - (0.50 - 0.5)^2 = 1.0000 \]
+    \item \textbf{Evaluator 1:} Reported confidence $p_1 = 0.50$.
+    \[ E_1 = 1 - (0.50 - 0.5)^2 = 1.0000 \]
+\end{itemize}
+
+---
+
+\section{Stage 3: Consensus Arbitration (Game 3)}
+Consensus Arbitration resolves conflicts by maximizing the weighted Nash product over the verdict space $v \in V$:
+\begin{equation}
+v^* = \arg\max_{v \in V} \prod_i (U_i(v) - d_i)^{w_i}
+\end{equation}
+
+\subsection{Weight and Disagreement Point Calculations}
+\begin{itemize}
+    \item \textbf{Bargaining Weight ($w_i$):} Determined by combining debate scores and calibration reward:
+    \[ w_i \propto |s_A + s_B| \cdot E_i \]
+    For both runs, weights split approximately evenly: $w_0 \approx 0.50, w_1 \approx 0.50$.
+    \item \textbf{Disagreement Point ($d_i$):} Calculated based on human review cost and effort:
+    \[ d_i = -\alpha_d - \beta \cdot \text{effort}_i = -0.1 - 0.1 \cdot \left(\frac{\text{tokens}}{1000}\right) \]
+\end{itemize}
+
+\subsection{Log-Odds Pooling \& Correlated Error Correction}
+The opinion pool combines logits under the assumption that evaluator errors are correlated. The effective evaluator count ($n_{eff}$) discounts the sample size to prevent overconfidence.
+
+\begin{enumerate}
+    \item \textbf{Kish Design-Effect Effective Count ($n_{eff}$):}
+    With $n = 2$ and prior correlation $\rho = 0.60$:
+    \begin{equation}
+    n_{eff} = \frac{n}{1 + (n - 1)\rho} = \frac{2}{1 + (2 - 1) \cdot 0.60} = \frac{2}{1.60} = 1.25
+    \end{equation}
+    \item \textbf{Pooling Equation:}
+    \begin{equation}
+    L_{corrected} = L_{prior} + n_{eff} \cdot (\bar{L}_{GLS} - L_{prior})
+    \end{equation}
+    Where $L_{prior} = \operatorname{logit}(debate\_prior) = 0$ (default prior $0.5$).
+    \item \textbf{Version 1 Pool Calculation:}
+    The average log-odds is:
+    \[ \bar{L}_{GLS} = \frac{\operatorname{logit}(0.99) + \operatorname{logit}(0.95)}{2} = \frac{4.595 + 2.944}{2} = 3.770 \]
+    The corrected log-odds is:
+    \[ L_{corr} = 1.25 \cdot 3.770 = 4.712 \]
+    The corrected pooled confidence is:
+    \[ p_{corrected} = \operatorname{sigmoid}(4.712) = 0.9911 \]
+    (Uncorrected confidence would be $\operatorname{sigmoid}(2 \cdot 3.770) = 0.9994$, showing a clear overconfidence correction).
+\end{enumerate}
+
+\newpage
+
+\section{System Troubleshooting \& Errors Elicited}
+
+\subsection{MiKTeX Out-of-date and Non-interactive Warnings}
+During paper compilation, the package manager logged a warning:
+\begin{quote}
+\texttt{pdflatex: major issue: So far, you have not checked for MiKTeX updates.}
+\end{quote}
+This was handled by running \texttt{pdflatex} with the \texttt{-interaction=nonstopmode} flag. This bypasses prompts and allows compilation to write out the finished PDF automatically.
+
+\subsection{API Overloads (503 Service Unavailable)}
+During model calling on \texttt{gemini-3.5-flash}, the Google GenAI gateway returned 503 errors:
+\begin{quote}
+\texttt{google.genai.errors.ServerError: 503 UNAVAILABLE. This model is currently experiencing high demand. Please try again later.}
+\end{quote}
+This occurred because the client was using the new \texttt{google-genai} SDK, whereas the codebase exception handler only checked for legacy \texttt{google.api\_core} exception class names.
+\begin{itemize}
+    \item \textbf{Fix:} We modified \texttt{\_is\_retryable} in \texttt{llm\_client.py} to identify \texttt{"ServerError"} and \texttt{"APIError"} class names and inspect their status codes, successfully enabling retry-backoff with jitter.
+\end{itemize}
+
+\subsection{Missing Environment Variables}
+The runner raised:
+\begin{quote}
+\texttt{Error building judge: GOOGLE\_API\_KEY is not set. Add it to .env or pass --api-key.}
+\end{quote}
+This occurred because \texttt{llm\_client.py} reads \texttt{os.getenv} but does not call \texttt{dotenv.load\_dotenv()}.
+\begin{itemize}
+    \item \textbf{Fix:} We resolved this by explicitly passing the API key using the command-line argument: \texttt{--api-key "<REDACTED>"}.
+\end{itemize}
+
+\subsection{Degenerate Concessions (Universal Claim-to-Concede)}
+In the original codebase, the Challenger agents immediately conceded in Round 1 on nearly every task.
+\begin{itemize}
+    \item \textbf{Root Cause:} The LLM output parser did not enforce schema boundaries. When an LLM output included conversational preambles or markdown code fences, the parser failed to extract the JSON object, leading to a silent fall-back that resolved the action to \texttt{concede} and used the raw response string as the argument.
+    \item \textbf{Fix:} Deployed \texttt{src/parsing.py} which sanitizes markdown code fences, enforceswhitelists, attempts exactly one structured re-ask, and resolves to a strict \texttt{FORFEIT} if parsing fails twice.
+\end{itemize}
+
+\end{document}

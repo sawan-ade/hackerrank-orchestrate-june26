@@ -1,0 +1,81 @@
+{
+  "verdict": "Tie",
+  "confidence": 0.9922506205861952,
+  "debate_results": {
+    "A": {
+      "answer_label": "A",
+      "debate_score": -1.83,
+      "surviving_claims": 1,
+      "successful_attacks": 0,
+      "total_proposer_tokens": 1098,
+      "total_challenger_tokens": 1732,
+      "transcript": [
+        {
+          "action": "claim",
+          "argument": "The provided Python function correctly implements a bottom-up dynamic programming algorithm to find and reconstruct the actual Longest Common Subsequence (LCS) string rather than just its length. The time complexity of O(m*n) and space complexity of O(m*n) are accurate, where m and n are the lengths of the two input strings.",
+          "target_claim_id": null,
+          "token_count": 1098
+        },
+        {
+          "action": "concede",
+          "argument": "1] > dp[2][0]` (1 > 0) -> True. So `i -= 1` -> `i=1`.\n`i=1, j=",
+          "target_claim_id": null,
+          "token_count": 1732
+        }
+      ],
+      "total_claims": 1,
+      "total_attacks": 0
+    },
+    "B": {
+      "answer_label": "B",
+      "debate_score": -1.9540000000000002,
+      "surviving_claims": 1,
+      "successful_attacks": 0,
+      "total_proposer_tokens": 1422,
+      "total_challenger_tokens": 1532,
+      "transcript": [
+        {
+          "action": "claim",
+          "argument": "thought}{\n  \"action\": \"claim\",\n  \"argument\": \"[ACTION: claim] The provided Python function `lcs` is functionally correct, successfully handling base cases (empty strings)",
+          "target_claim_id": null,
+          "token_count": 1422
+        },
+        {
+          "action": "concede",
+          "argument": "{\n  \"action\": \"concede\",\n  \"argument\": \"The Python implementation of the LCS algorithm is functionally correct. It properly identifies the base cases (empty strings), correctly matches the last",
+          "target_claim_id": null,
+          "token_count": 1532
+        }
+      ],
+      "total_claims": 1,
+      "total_attacks": 0
+    }
+  },
+  "calibration_results": [
+    {
+      "evaluator_id": 0,
+      "reported_confidence": 0.5,
+      "calibration_score": 1.0
+    },
+    {
+      "evaluator_id": 1,
+      "reported_confidence": 0.5,
+      "calibration_score": 1.0
+    }
+  ],
+  "arbitration_result": {
+    "verdict": "Tie",
+    "nash_product": 0.779284462271409,
+    "weights": {
+      "0": 0.5,
+      "1": 0.5
+    },
+    "confidence": 0.9922506205861952,
+    "n_effective": 1.25,
+    "effective_correlation": 0.6000000000000001,
+    "confidence_uncorrected": 0.9690396603526912
+  },
+  "total_tokens": 5784,
+  "justification": "GT-Judge Verdict: Tie\nConfidence: 0.992\n\n--- Debate Scores ---\n  Answer A: score=-1.830, surviving_claims=1, successful_attacks=0\n  Answer B: score=-1.954, surviving_claims=1, successful_attacks=0\n\n--- Calibration ---\n  Evaluator 0: p_hat=0.500, Brier=1.000\n  Evaluator 1: p_hat=0.500, Brier=1.000\n\n--- Bargaining Weights ---\n  Evaluator 0: w=0.500\n  Evaluator 1: w=0.500",
+  "_mock": false
+}

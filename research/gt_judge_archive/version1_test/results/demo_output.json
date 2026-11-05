@@ -1,0 +1,81 @@
+{
+  "verdict": "A_wins",
+  "confidence": 0.9906104524909264,
+  "debate_results": {
+    "A": {
+      "answer_label": "A",
+      "debate_score": -1.742,
+      "surviving_claims": 1,
+      "successful_attacks": 0,
+      "total_proposer_tokens": 1030,
+      "total_challenger_tokens": 1712,
+      "transcript": [
+        {
+          "action": "claim",
+          "argument": "The provided Python code is correct and fully functional. It accurately implements the bottom-up dynamic programming approach to find the actual longest common subsequence (LCS) string, rather than just its length, by correctly backtracking through the DP table in O(m*n) time and space complexity.",
+          "target_claim_id": null,
+          "token_count": 1030
+        },
+        {
+          "action": "concede",
+          "argument": "{\n  \"action\": \"concede\",\n  \"argument\": \"The provided implementation of the longest common subsequence (LCS) is correct. The bottom-up dynamic programming approach correctly",
+          "target_claim_id": null,
+          "token_count": 1712
+        }
+      ],
+      "total_claims": 1,
+      "total_attacks": 0
+    },
+    "B": {
+      "answer_label": "B",
+      "debate_score": -1.956,
+      "surviving_claims": 1,
+      "successful_attacks": 0,
+      "total_proposer_tokens": 1422,
+      "total_challenger_tokens": 1534,
+      "transcript": [
+        {
+          "action": "claim",
+          "argument": " [ACTION: claim] or [ACTION: defend] or [ACTION: clarify]\n...\nOUTPUT FORMAT (JSON):\n{\n  \"action\": \"claim\" | \"defend\"",
+          "target_claim_id": null,
+          "token_count": 1422
+        },
+        {
+          "action": "concede",
+          "argument": "```json\n{\n  \"action\": \"attack\",\n  \"argument\": \"The time complexity analysis is incorrect and underestimated for three reasons. First, the variable 'n' is undefined. Second",
+          "target_claim_id": null,
+          "token_count": 1534
+        }
+      ],
+      "total_claims": 1,
+      "total_attacks": 0
+    }
+  },
+  "calibration_results": [
+    {
+      "evaluator_id": 0,
+      "reported_confidence": 0.99,
+      "calibration_score": 0.9999
+    },
+    {
+      "evaluator_id": 1,
+      "reported_confidence": 0.95,
+      "calibration_score": 0.9974999999999999
+    }
+  ],
+  "arbitration_result": {
+    "verdict": "A_wins",
+    "nash_product": 0.703176096969087,
+    "weights": {
+      "0": 0.5006007810153199,
+      "1": 0.49939921898468004
+    },
+    "confidence": 0.9906104524909264,
+    "n_effective": 1.25,
+    "effective_correlation": 0.6000000000000001,
+    "confidence_uncorrected": 0.9993419417496351
+  },
+  "total_tokens": 5698,
+  "justification": "GT-Judge Verdict: A_wins\nConfidence: 0.991\n\n--- Debate Scores ---\n  Answer A: score=-1.742, surviving_claims=1, successful_attacks=0\n  Answer B: score=-1.956, surviving_claims=1, successful_attacks=0\n\n--- Calibration ---\n  Evaluator 0: p_hat=0.990, Brier=1.000\n  Evaluator 1: p_hat=0.950, Brier=0.997\n\n--- Bargaining Weights ---\n  Evaluator 0: w=0.501\n  Evaluator 1: w=0.499",
+  "_mock": false
+}

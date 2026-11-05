@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "category": "Coding",
+    "question": "Write a function to find the longest common subsequence of two strings. Explain your approach and analyze its complexity.",
+    "answer_a": "Here is a dynamic programming solution:\n\n```python\ndef lcs(s1, s2):\n    m, n = len(s1), len(s2)\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            if s1[i-1] == s2[j-1]:\n                dp[i][j] = dp[i-1][j-1] + 1\n            else:\n                dp[i][j] = max(dp[i-1][j], dp[i][j-1])\n    result = []\n    i, j = m, n\n    while i > 0 and j > 0:\n        if s1[i-1] == s2[j-1]:\n            result.append(s1[i-1])\n            i -= 1\n            j -= 1\n        elif dp[i-1][j] > dp[i][j-1]:\n            i -= 1\n        else:\n            j -= 1\n    return ''.join(reversed(result))\n```\n\n**Approach**: Bottom-up dynamic programming. Complexity is O(m * n) time and space.",
+    "answer_b": "The longest common subsequence can be found using recursion:\n\n```python\ndef lcs(s1, s2):\n    if not s1 or not s2:\n        return \"\"\n    if s1[-1] == s2[-1]:\n        return lcs(s1[:-1], s2[:-1]) + s1[-1]\n    else:\n        r1 = lcs(s1[:-1], s2)\n        r2 = lcs(s1, s2[:-1])\n        return r1 if len(r1) > len(r2) else r2\n```\n\nThis recursive check checks if the last characters match and takes the max path. Time complexity is O(2^n).",
+    "human_preference": "A"
+  },
+  {
+    "id": 2,
+    "category": "Math & Logic",
+    "question": "A box contains 3 red balls and 7 blue balls. If two balls are drawn at random without replacement, what is the probability that both are red?",
+    "answer_a": "Let's compute the probability step by step:\n1. Total balls = 3 + 7 = 10 balls.\n2. The probability of drawing a red ball on the first draw: P(R1) = 3/10.\n3. Since drawing is without replacement, 2 red balls and 7 blue balls remain. Total balls remaining = 9.\n4. The probability of drawing a red ball on the second draw given R1: P(R2 | R1) = 2/9.\n5. Probability of both being red: P(R1 and R2) = P(R1) * P(R2 | R1) = (3/10) * (2/9) = 6/90 = 1/15.\n\nThe probability is 1/15 (or approximately 6.67%).",
+    "answer_b": "The total number of balls is 10. The probability of drawing a red ball is 3/10.\nSince we are drawing two balls, we just multiply the individual probabilities:\nProbability = (3/10) * (3/10) = 9/100 = 9%.\nSo the probability that both balls drawn are red is 9%.",
+    "human_preference": "A"
+  },
+  {
+    "id": 3,
+    "category": "Writing & Reasoning",
+    "question": "Compare the impact of the printing press vs. the internet on human communication in 2 sentences.",
+    "answer_a": "While the printing press democratized literacy by enabling the mass production of physical texts, the internet decentralized global communication by allowing instantaneous, bi-directional interaction. Both technologies fundamentally shifted the distribution of knowledge, but the internet transformed consumers into active creators on a global scale.",
+    "answer_b": "The printing press was invented by Johannes Gutenberg in the 15th century and it completely revolutionized how information was printed, spread, and read by people all across Europe, transforming societies by increasing literacy rates and enabling the scientific revolution to take off because books could now be distributed widely. In comparison, the internet is a much newer technology that connects billions of computers and people globally in real-time, allowing users to send emails, browse web pages, stream video, publish social media posts, and instantly share massive amounts of data in a way that Gutenberg could have never imagined.",
+    "human_preference": "A"
+  },
+  {
+    "id": 4,
+    "category": "Summarization",
+    "question": "Summarize this paragraph in one short sentence: 'The Apollo program was designed to land humans on the Moon and bring them safely back to Earth. Six of the missions (Apollos 11, 12, 14, 15, 16, and 17) achieved this goal. Apollos 7 and 9 were Earth-orbiting missions to test the Command and Lunar Modules. Apollo 8 and 10 tested components while orbiting the Moon. Apollo 13 did not land due to a malfunction.'",
+    "answer_a": "The Apollo program successfully landed humans on the Moon in six out of eleven total space missions.",
+    "answer_b": "The Apollo program, which was a landmark spaceflight initiative run by NASA, succeeded in sending astronauts to walk on the lunar surface during six different missions—including the famous Apollo 11, 12, 14, 15, 16, and 17 flights—while other flights like Apollos 7, 8, 9, 10, and the aborted Apollo 13 tested equipment either in Earth orbit or Moon orbit.",
+    "human_preference": "A"
+  },
+  {
+    "id": 5,
+    "category": "Argumentation",
+    "question": "Should schools teach financial literacy? Give your main argument.",
+    "answer_a": "Yes, schools should teach financial literacy because equipping students with foundational skills in budgeting, debt management, and investing directly reduces long-term personal debt and fosters economic mobility before they enter adulthood.",
+    "answer_b": "Yes, they absolutely should. Financial literacy is extremely important because many adults struggle with credit cards, high-interest debt, student loans, and failing to save for retirement, and if they had just learned these basic concepts when they were younger in school it would save them so much stress and help the economy as a whole grow because everyone would make smarter choices with their money.",
+    "human_preference": "A"
+  }
+]

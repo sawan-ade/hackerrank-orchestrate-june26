@@ -1,0 +1,119 @@
+{
+  "verdict": "A_wins",
+  "confidence": 0.8751588310038119,
+  "debate_results": {
+    "A": {
+      "answer_label": "A",
+      "debate_score": 0.8,
+      "surviving_claims": 1,
+      "successful_attacks": 0,
+      "total_proposer_tokens": 120,
+      "total_challenger_tokens": 80,
+      "transcript": [
+        {
+          "action": "claim",
+          "argument": "Claim A: The dynamic programming solution runs in O(m * n) polynomial time and correctly computes the LCS.",
+          "target_claim_id": null,
+          "token_count": 120
+        },
+        {
+          "action": "concede",
+          "argument": "Concede: The proposer's claim about O(m*n) complexity and accuracy is correct.",
+          "target_claim_id": null,
+          "token_count": 80
+        }
+      ],
+      "total_claims": 1,
+      "total_attacks": 0
+    },
+    "B": {
+      "answer_label": "B",
+      "debate_score": -1.8800000000000001,
+      "surviving_claims": 0,
+      "successful_attacks": 3,
+      "total_proposer_tokens": 750,
+      "total_challenger_tokens": 330,
+      "transcript": [
+        {
+          "action": "claim",
+          "argument": "Claim B: The naive recursive solution has O(2^n) time complexity and will time out on long strings.",
+          "target_claim_id": null,
+          "token_count": 150
+        },
+        {
+          "action": "attack",
+          "argument": "Attack B: The recursive solution has exponential complexity and lack of memoization makes it highly inefficient.",
+          "target_claim_id": 1,
+          "token_count": 110
+        },
+        {
+          "action": "defend",
+          "argument": "Defending B: While standard recursion has exponential complexity, it requires no extra setup space.",
+          "target_claim_id": 2,
+          "token_count": 100
+        },
+        {
+          "action": "claim",
+          "argument": "Claim B: The naive recursive solution has O(2^n) time complexity and will time out on long strings.",
+          "target_claim_id": null,
+          "token_count": 150
+        },
+        {
+          "action": "attack",
+          "argument": "Attack B: The recursive solution has exponential complexity and lack of memoization makes it highly inefficient.",
+          "target_claim_id": 1,
+          "token_count": 110
+        },
+        {
+          "action": "defend",
+          "argument": "Defending B: While standard recursion has exponential complexity, it requires no extra setup space.",
+          "target_claim_id": 3,
+          "token_count": 100
+        },
+        {
+          "action": "claim",
+          "argument": "Claim B: The naive recursive solution has O(2^n) time complexity and will time out on long strings.",
+          "target_claim_id": null,
+          "token_count": 150
+        },
+        {
+          "action": "attack",
+          "argument": "Attack B: The recursive solution has exponential complexity and lack of memoization makes it highly inefficient.",
+          "target_claim_id": 1,
+          "token_count": 110
+        },
+        {
+          "action": "defend",
+          "argument": "Defending B: While standard recursion has exponential complexity, it requires no extra setup space.",
+          "target_claim_id": 4,
+          "token_count": 100
+        }
+      ],
+      "total_claims": 3,
+      "total_attacks": 3
+    }
+  },
+  "calibration_results": [
+    {
+      "evaluator_id": 0,
+      "reported_confidence": 0.85,
+      "calibration_score": 0.9775
+    },
+    {
+      "evaluator_id": 1,
+      "reported_confidence": 0.9,
+      "calibration_score": 0.99
+    }
+  ],
+  "arbitration_result": {
+    "verdict": "A_wins",
+    "nash_product": 0.5942028117476413,
+    "weights": {
+      "0": 0.49682337992376113,
+      "1": 0.5031766200762389
+    },
+    "confidence": 0.8751588310038119
+  },
+  "total_tokens": 1280,
+  "justification": "GT-Judge Verdict: A_wins\nConfidence: 0.875\n\n--- Debate Scores ---\n  Answer A: score=0.800, surviving_claims=1, successful_attacks=0\n  Answer B: score=-1.880, surviving_claims=0, successful_attacks=3\n\n--- Calibration ---\n  Evaluator 0: p_hat=0.850, Brier=0.978\n  Evaluator 1: p_hat=0.900, Brier=0.990\n\n--- Bargaining Weights ---\n  Evaluator 0: w=0.497\n  Evaluator 1: w=0.503"
+}

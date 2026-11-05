@@ -1,0 +1,15 @@
+# Core dependencies — pinned to the versions this repo was tested against
+# (issue §4: reproducible fresh-env install). Verified with:
+#   pip install -r requirements.txt && python -m pytest tests/ -v
+openai==2.46.0
+pydantic==2.13.4
+pyyaml==6.0.3
+rich==15.0.0
+pytest==9.1.1
+numpy==2.4.4
+
+# Optional provider SDKs — only needed if you set model.provider to that
+# backend (src/llm_client.py imports them lazily). Uncomment as required:
+#   anthropic==0.40.0        # provider: anthropic
+#   google-genai==0.3.0      # provider: google (new SDK)
+# The Google client also supports the legacy 'google-generativeai' package.

@@ -1,0 +1,506 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+
+\newcommand{\neff}{n_{\mathrm{eff}}}
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO --- #1]}}}
+
+\title{GT-Judge: A Game-Theoretic Multi-Agent Judge\\ for Bias-Resistant LLM Evaluation}
+
+\author{Sawan Ade\\ IISER Bhopal \& IIT Patna\\ \texttt{sawan.ade@iiserb.ac.in}}
+
+\date{July 18, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We introduce GT-Judge (Game-Theoretic Multi-Agent Judge), a training-free
+evaluation framework that models the judging process as the outcome of a
+three-stage strategic game pipeline. Traditional LLM-as-a-judge systems suffer
+from human-like biases---position bias, verbosity bias, and sycophancy---that
+are difficult to resolve via heuristic prompt tuning or majority voting.
+GT-Judge targets these biases by coupling (1) an extensive-form Reasoning
+Debate Game with endogenous claim validity and a token penalty to discourage
+verbose or sycophantic arguments, (2) a Confidence Calibration Game using a
+proper scoring rule (Brier reward) to elicit honest confidence estimates, and
+(3) a Consensus Arbitration Game that resolves evaluator disagreements via the
+Nash Bargaining Solution. Motivated by recent evidence that panels of LLM
+judges lose most of their nominal independence to correlated errors
+\citep{kohli2026}, we add a \emph{correlated-error correction}: the arbitration
+stage discounts a redundant panel of $n$ evaluators to an effective count
+$\neff = \mathbf{1}^\top \Sigma^{-1}\mathbf{1}$ and aggregates their beliefs in
+log-odds space, so a correlated panel is not treated as $n$ independent votes.
+On seeded synthetic panels with a known error-correlation $\rho$, this
+correction is exactly the identity at $\rho=0$ and, at $\rho=0.9$ with $n=3$,
+reduces expected calibration error from $0.391$ to $0.267$ and overconfidence
+on wrong verdicts from $0.314$ to $0.169$ (Section~\ref{sec:correlation}).
+We also contribute a full open-source implementation, a reproducible
+correctness test suite, and an ablation harness. \textbf{The end-to-end
+LLM-based benchmark (accuracy against human preferences, position-flip rate,
+verbosity bias) has not yet been run on live models; those numbers are reported
+as \todo{pending real run} rather than estimated,} and the released code
+contains no fabricated results. We describe the experimental protocol
+(a stratified pilot and a full multi-backbone run on public preference data)
+needed to fill them in.
+\end{abstract}
+
+\section{Introduction}
+Evaluating the output quality of large language models (LLMs) has become a
+primary bottleneck in AI development. While human evaluation remains the gold
+standard, its cost and lack of scalability have driven the widespread adoption
+of LLM-as-a-judge frameworks \citep{zheng2023}. However, single-agent LLM
+judges suffer from systematic biases:
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Position bias:} swapping the presentation order of two candidate
+  answers changes the judge's preference in a substantial fraction of cases,
+  typically favouring whichever answer appears first \citep{zheng2023}.
+  \item \textbf{Verbosity bias:} judges tend to assign higher scores to longer
+  answers, even when the extra text is redundant.
+  \item \textbf{Sycophancy:} judges tend to agree with a proposer's implicit
+  position rather than raising objective criticisms.
+\end{itemize}
+
+Prior methods alleviate these biases with prompt engineering, temperature
+tuning, or heuristic voter ensembles, but these address symptoms rather than
+the root cause: single-agent judges lack the \emph{incentives} to be objective,
+concise, and calibrated. A parallel line of work moves to \emph{panels} of
+judges \citep{verga2024}, but recent evidence shows that panels sharing base
+models make the same mistakes on the same items, so nine judges can carry only
+about two independent votes' worth of information \citep{kohli2026}. This
+motivates treating evaluator agreement as strategically- and
+statistically-structured rather than as independent evidence.
+
+In this work we introduce GT-Judge, a game-theoretic multi-agent evaluation
+framework that replaces subjective, single-shot judging with a structured
+pipeline whose verdict is the outcome of three coupled games:
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Reasoning Debate Game:} a perfect-information extensive-form
+  game between a Proposer and a Challenger; a token penalty $\lambda$ is
+  deducted from payoffs to discourage verbosity.
+  \item \textbf{Confidence Calibration Game:} evaluators independently report a
+  probability $\hat{p}\in[0,1]$; payoffs use the Brier reward, a strictly proper
+  scoring rule that penalises overconfidence.
+  \item \textbf{Consensus Arbitration Game:} disagreements are resolved through
+  the Nash Bargaining Solution, weighting each evaluator by debate performance
+  and calibrated confidence, and---new in this version---correcting for
+  correlated evaluator errors.
+\end{enumerate}
+
+\paragraph{Contributions.}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Game-theoretic orchestration.} We formulate LLM evaluation as a
+  three-stage strategic game coupling extensive-form debate, Brier calibration,
+  and Nash bargaining.
+  \item \textbf{Theoretical guarantees.} We prove that concise reporting is the
+  unique Subgame-Perfect Nash Equilibrium under strict tie-breaking
+  (Theorem~\ref{thm:spne}), and prove position invariance
+  (Proposition~\ref{prop:position}).
+  \item \textbf{Correlated-error correction.} We formalise an effective-evaluator
+  count $\neff$ and a log-odds aggregation rule that discounts redundant panels
+  (Definition~\ref{def:neff}, Proposition~\ref{prop:correction}), directly
+  addressing the independence deficit reported by \citet{kohli2026}, and we
+  validate it on seeded synthetic panels (Section~\ref{sec:correlation}).
+  \item \textbf{Open, reproducible implementation.} We release the full
+  pipeline, a 54-test correctness suite, an ablation harness, and a cost-gated
+  experiment runner. We report unmeasured quantities as \todo{pending real run}
+  rather than estimating them.
+\end{itemize}
+
+\section{Related Work}
+\paragraph{LLM-as-a-judge.} Direct prompting of LLMs as evaluators was
+popularised by MT-Bench \citep{zheng2023}, which also catalogued position,
+verbosity, and self-enhancement biases. Subsequent work studies the
+consistency of such judges: TrustJudge \citep{trustjudge2025} characterises
+score--comparison inconsistencies and proposes entropy-preserving probabilistic
+scoring. Trust-or-Escalate \citep{jung2025} takes a \emph{selective} view:
+it estimates the confidence that a human would agree with a judgement (via
+Simulated Annotators) and abstains or escalates to a stronger model to give a
+provable human-agreement guarantee. GT-Judge differs in that it produces a
+verdict without abstention and derives evaluator weights and confidence from an
+explicit multi-agent game rather than from single-model confidence.
+
+\paragraph{Judge panels and correlated errors.} PoLL \citep{verga2024} shows
+that panels of diverse, smaller models can beat a single large judge on
+average. \citet{kohli2026} qualify this sharply: measuring a nine-judge panel
+with the Kish effective sample size, they find only $\approx 2$ effective
+independent votes, an $8$--$22$ point accuracy shortfall relative to the
+independent-voting ideal, and that neither more judges nor smarter aggregation
+closes more than a fraction of the gap---the bottleneck is correlated judges,
+not the aggregation algorithm. We take this as a design constraint rather than
+a target to beat: our correction (Section~\ref{sec:correlation}) does not claim
+to recover the lost independent \emph{information}; it uses $\neff$ to keep the
+panel's \emph{confidence} honest, so a redundant panel does not behave as though
+it had $n$ independent votes.
+
+\paragraph{Game theory in LLM multi-agent systems.} ECON \citep{xie2025} models
+cooperative multi-LLM \emph{reasoning} as an incomplete-information game and
+uses reinforcement learning to coordinate agents toward a Bayesian Nash
+Equilibrium, improving accuracy on math and planning tasks. GT-Judge instead
+targets adversarial \emph{evaluation} (judging), is entirely training-free, and
+uses Nash \emph{bargaining} over verdicts rather than equilibrium coordination
+over answers.
+
+\paragraph{Peer prediction and proper scoring.} Proper scoring rules such as
+the Brier score, and peer-prediction mechanisms more broadly, elicit truthful
+beliefs without direct access to ground truth \citep{prelec2004}. We adapt
+these ideas to online evaluator calibration via a consensus-proxy mechanism
+that preserves truthfulness incentives under a non-dictatorship condition
+(Proposition~\ref{prop:incentive}).
+
+\section{Theoretical Framework}
+Let $\pi = (Q, A_1, A_2)$ be an evaluation instance with a question $Q$ and two
+candidate answers. GT-Judge runs two symmetric debates (one per answer),
+elicits calibrated confidences, and resolves the verdict via bargaining.
+
+\subsection{Game 1: Reasoning Debate Game (Extensive-Form)}
+The debate is a perfect-information extensive-form game
+$G_1 = \langle N, \mathcal{A}, U, \lambda\rangle$ with players $N=\{P,C\}$
+(Proposer, Challenger) and action space
+$\mathcal{A}(h)=\{\text{claim, defend, clarify, attack, concede}\}$.
+
+\begin{assumption}[Action classification]
+There exists a deterministic format-mapping $\phi:\mathcal{T}\to\mathcal{A}(h)$
+mapping tagged text (e.g.\ \texttt{[ACTION: attack]}) to discrete actions. On a
+format violation an agent defaults to the weakest action (clarify for $P$,
+concede for $C$) and receives a penalty $\epsilon>0$.
+\end{assumption}
+
+\begin{definition}[Endogenous claim validity]\label{def:validity}
+The validity $v(c)$ of a Proposer claim $c$ is
+\[
+v(c) = \begin{cases}
+1 & \text{if no attack targets } c\\
+1 - \mathrm{sev}(a^*,c) & \text{if } a^* \text{ targets } c \text{ and } P \text{ does not defend}\\
+v_0(c) & \text{if } a^* \text{ targets } c \text{ and } P \text{ successfully defends}
+\end{cases}
+\]
+where $\mathrm{sev}(a^*,c)\in[0,1]$ is the attack severity assessed by an
+impartial validity assessor and $v_0(c)\in(0,1]$ is the reduced validity after
+defense.
+\end{definition}
+
+\paragraph{Length-normalised debate score (reconciled with the implementation).}
+Let $C_X$ be the claims for answer $X$ and $A_X$ the attacks against them. To
+avoid re-introducing the very verbosity bias the game is meant to remove, the
+released implementation scores a debate by the \emph{mean} surviving-claim
+validity net of attack severity, rather than an unnormalised sum:
+\begin{equation}\label{eq:debatescore}
+\mathrm{DebateScore}(X) =
+\frac{1}{|C_X|}\!\sum_{c\in C_X}\! v(c)
+\;-\; \frac{1}{|A_X|}\!\sum_{a\in A_X}\!\mathrm{sev}(a,c(a))
+\;-\; \lambda\, \mathrm{Tokens}(X),
+\end{equation}
+with the convention that an empty sum is $0$. The per-agent utilities used for
+equilibrium analysis are the corresponding proposer/challenger terms of
+Eq.~\eqref{eq:debatescore}. (An earlier draft wrote this score as an
+unnormalised sum; we correct it here to match the code, which normalises so
+that a longer debate cannot inflate a score merely by making more claims.)
+
+\begin{assumption}[Strict tie-breaking]
+At indifference (an active move's utility equals its expected token cost),
+players choose the passive action (Proposer abandons/clarifies, Challenger
+concedes).
+\end{assumption}
+
+\begin{theorem}[Uniqueness of SPNE]\label{thm:spne}
+Under Assumptions 1--2 and finite rounds $K$, backward induction yields a unique
+Subgame-Perfect Nash Equilibrium $\sigma^*=(\sigma_P^*,\sigma_C^*)$ with
+\[
+\sigma_P^*(h)=\begin{cases}\text{defend } c & v(c) > \lambda\,\mathbb{E}[|\text{tokens(defense)}|]\\ \text{abandon } c & \text{otherwise}\end{cases}
+\quad
+\sigma_C^*(h)=\begin{cases}\text{attack } c & \mathrm{sev}(a^*,c) > \lambda\,\mathbb{E}[|\text{tokens(attack)}|]\\ \text{concede} & \text{otherwise}\end{cases}
+\]
+\end{theorem}
+\begin{proof}
+The game is finite-depth and of perfect information. Under Assumption~2 the
+payoff difference between any active and passive action is strictly non-zero
+except at the boundary, which the weak inequality resolves to the passive
+choice. By Zermelo's theorem, backward induction on a finite perfect-information
+game with a unique optimal action at every decision node yields a unique SPNE.
+\end{proof}
+
+\subsection{Game 2: Confidence Calibration Game}
+Each evaluator $i\in\{1,\dots,n\}$ reports a confidence $\hat p_i\in[0,1]$ that
+answer A is superior, scored by the Brier reward
+\[
+U_{\mathrm{cal}}(\hat p_i, y) = 1 - (y-\hat p_i)^2,\qquad y\in\{0,0.5,1\}.
+\]
+Because ground-truth labels are unavailable at deployment, we use a consensus
+proxy.
+\begin{definition}[Consensus proxy]\label{def:proxy}
+In deployment the ground truth $y$ is replaced by $\tilde y$ derived from the
+final verdict $v^*$: $\tilde y=1$ if ``A wins'', $0$ if ``B wins'', $0.5$ if
+``Tie''.
+\end{definition}
+\begin{proposition}[Incentive preservation]\label{prop:incentive}
+Under $\tilde y$, reporting the true posterior $\hat p_i^*=\mathbb{E}[v^*\mid s_i]$
+is strictly utility-maximising for each agent $i$, provided no single agent can
+unilaterally dictate $v^*$ (non-dictatorship).
+\end{proposition}
+\begin{proof}
+The Brier reward is strictly proper, so agent $i$ maximises
+$\mathbb{E}[1-(\tilde y-\hat p_i)^2]$ iff $\hat p_i=\mathbb{E}[\tilde y\mid s_i]$.
+Since $v^*$ is the joint weighted bargaining outcome of all $n\ge 2$ agents,
+non-dictatorship holds and $i$ cannot move $\tilde y$ to match its own report.
+\end{proof}
+
+\subsection{Game 3: Consensus Arbitration Game}
+Disagreements are resolved by the Nash Bargaining Solution over
+$v\in\{\text{A wins, B wins, Tie}\}$:
+\begin{equation}\label{eq:nash}
+v^* = \arg\max_v \prod_{i=1}^{n}\big(U_i(v)-d_i\big)^{w_i}.
+\end{equation}
+Here $d_i=-C_H-\beta\cdot\mathrm{Effort}_i$ is the disagreement point (the
+human-review fallback cost) and $w_i$ is a bargaining weight from debate and
+calibration performance. The per-verdict utility used in the implementation is
+\begin{equation}\label{eq:utility}
+U_i(v) = \underbrace{1-|y_v-\hat p_i|}_{\text{belief alignment}}
+\;+\; \tfrac{1}{2}\,U_{\mathrm{cal},i}
+\;+\; \alpha_{\mathrm{deb}}\,\big(1-|y_v-\mathrm{Prior}(v)|\big),
+\end{equation}
+where $y_v\in\{0,0.5,1\}$ encodes the verdict and $\mathrm{Prior}(v)$ is a
+debate-derived prior. The two extra terms beyond raw belief alignment---a
+calibration-quality bonus $\tfrac12 U_{\mathrm{cal},i}$ and a debate-prior
+alignment term weighted by $\alpha_{\mathrm{deb}}$---were present in the code but
+omitted from an earlier draft; we state them explicitly here so the paper and
+implementation agree.
+
+\begin{proposition}[Position invariance]\label{prop:position}
+Let $\pi=(Q,A,B)$ and $\pi'=(Q,B,A)$. If debates are symmetric and scores are
+aggregated across role-swapped rounds, then $\text{GT-Judge}(\pi)=\text{GT-Judge}(\pi')$.
+\end{proposition}
+\begin{proof}
+Both answers undergo symmetric debates, so $\mathrm{DebateScore}(A\mid\pi)=\mathrm{DebateScore}(A\mid\pi')$.
+Calibration input is order-independent and evaluator order is counterbalanced,
+so posteriors swap symmetrically; the Nash Bargaining Solution is symmetric
+under coordinate swaps, hence $v^*(\pi)=v^*(\pi')$.
+\end{proof}
+
+\section{Correlated-Error Correction}\label{sec:correlation}
+\citet{kohli2026} show that a panel's nominal size $n$ badly overstates its
+information content when judges share errors. We take this as a constraint and
+correct the arbitration stage's \emph{confidence}, not its accuracy.
+
+\begin{definition}[Effective evaluator count]\label{def:neff}
+Let $\Sigma\in\mathbb{R}^{n\times n}$ be the correlation matrix of the
+evaluators' errors (estimated from their reported confidences across items, or,
+for a single item, assumed equicorrelated with parameter $\rho$). The effective
+number of independent evaluators is
+\begin{equation}
+\neff = \mathbf{1}^\top \Sigma^{-1}\mathbf{1},
+\end{equation}
+clipped to $[1,n]$. For the equicorrelation matrix
+$\Sigma_{ij}=\rho$ $(i\neq j)$, $\Sigma_{ii}=1$, this has the closed form
+$\neff = n/\big(1+(n-1)\rho\big)$, so $\neff=n$ at $\rho=0$ and $\neff\to 1$ as
+$\rho\to 1$.
+\end{definition}
+
+\begin{proposition}[Redundancy-aware pooling]\label{prop:correction}
+Let $\ell_i=\mathrm{logit}(\hat p_i)$ and let $\bar\ell$ be their
+$\Sigma$-optimal (GLS) weighted mean, and let $\ell_0=\mathrm{logit}(\mathrm{prior})$
+be the debate prior in log-odds. Define the corrected aggregate
+\begin{equation}\label{eq:pool}
+\ell^\star = \ell_0 + \neff\,(\bar\ell-\ell_0),\qquad
+\hat p^\star=\sigma(\ell^\star).
+\end{equation}
+Then (i) at $\rho=0$, $\neff=n$ and Eq.~\eqref{eq:pool} equals the standard
+independence-assuming logarithmic opinion pool; (ii) as $\rho\to 1$, $\neff\to1$
+and the panel is counted as a single judge. Thus the correction interpolates
+between full independent pooling and one effective judge as redundancy grows.
+\end{proposition}
+\begin{proof}[Proof sketch]
+A logarithmic opinion pool of $n$ conditionally-independent judges adds $n$
+log-odds increments to the prior: $\ell_0+n(\bar\ell-\ell_0)$. Replacing the
+count $n$ by $\neff$ rescales the total evidence to $\neff$ independent
+increments. Substituting the equicorrelation closed form of
+Definition~\ref{def:neff} gives $\neff=n$ at $\rho=0$ (recovering the pool) and
+$\neff\to1$ at $\rho\to1$ (a single judge).
+\end{proof}
+
+\paragraph{Synthetic validation.} We validate Eq.~\eqref{eq:pool} on seeded
+synthetic panels ($n=3$, 20{,}000 trials, seed 20260718) whose errors are
+correlated with a \emph{known} $\rho$; this uses no LLM calls, so the numbers are
+reproducible now (\texttt{scripts/validate\_correlation\_correction.py}). The
+implemented $\neff$ matches the closed form to $<10^{-6}$ for all tested
+$(n,\rho)$. Table~\ref{tab:corr} shows that the correction is exactly the
+identity at $\rho=0$ and improves calibration as $\rho$ grows: at $\rho=0.9$ it
+cuts expected calibration error (ECE) by $32\%$ and overconfidence on wrong
+verdicts by $46\%$. Because the naive log-odds pool is genuinely overconfident
+under correlation, Brier also improves; the correction does \emph{not} claim to
+recover lost accuracy, consistent with \citet{kohli2026}.
+
+\begin{table}[t]
+\centering
+\caption{Correlated-error correction on synthetic panels ($n=3$, seeded, no
+LLM). Lower is better for all three metrics. ``ocw'' is mean overconfidence on
+wrong verdicts. At $\rho=0$ the correction is the identity map.}
+\label{tab:corr}
+\begin{tabular}{cccccccc}
+\toprule
+$\rho$ & $\neff$ & ECE (naive) & ECE (corr.) & ocw (naive) & ocw (corr.) & Brier (naive) & Brier (corr.)\\
+\midrule
+0.0 & 3.00 & 0.389 & 0.389 & 0.213 & 0.213 & 0.081 & 0.081\\
+0.3 & 1.88 & 0.380 & 0.330 & 0.260 & 0.193 & 0.124 & 0.120\\
+0.6 & 1.36 & 0.392 & 0.298 & 0.291 & 0.179 & 0.153 & 0.142\\
+0.9 & 1.07 & 0.391 & 0.267 & 0.314 & 0.169 & 0.177 & 0.158\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{System Implementation and Verification}
+GT-Judge is a modular Python pipeline supporting OpenAI, Anthropic, and Google
+backbones behind one client interface, with exponential-backoff retries and
+temperature-0 response caching. Debates for the two answers run concurrently;
+per-run identifier counters (rather than shared instance state) make the
+concurrent path free of race conditions. The step-by-step procedure is given in
+Algorithm~\ref{alg:pipeline}.
+
+\begin{algorithm}[t]
+\caption{GT-Judge Evaluation Pipeline}
+\label{alg:pipeline}
+\begin{algorithmic}[1]
+\Require Question $Q$, answers $A,B$, rounds $K$, penalty $\lambda$
+\Ensure Verdict $v^*\in\{\text{A wins, B wins, Tie}\}$
+\State Run symmetric debate for $A$ and for $B$ (role-swapped), concurrently
+\State Compute validity $v(c)$, severity $\mathrm{sev}(a,c)$, and
+$\mathrm{DebateScore}$ via Eq.~\eqref{eq:debatescore}
+\For{each evaluator $i$}
+  \State Counterbalance presentation order; elicit $\hat p_i\in[0,1]$
+\EndFor
+\State Estimate $\Sigma$, $\neff$; form corrected aggregate via Eq.~\eqref{eq:pool}
+\Repeat
+  \State Solve Nash bargaining Eq.~\eqref{eq:nash}; resolve proxy $\tilde y$;
+  update $w_i$
+\Until{$v^*$ converges or max iterations}
+\State \Return $v^*$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Correctness suite and ablations.} The release includes 54 unit tests
+covering the game logic, the multi-provider client, robust JSON parsing, the
+$\neff$ identity and GLS weights, and edge cases (single evaluator, ties, empty
+answers, malformed model output). An ablation harness runs the full pipeline and
+three lesioned variants (no debate, no calibration, no arbitration). We note one
+qualitative check that already holds offline: with arbitration removed, the
+pipeline loses position invariance (flip rate jumps to $100\%$ on the scripted
+harness), whereas the full pipeline does not---consistent with
+Proposition~\ref{prop:position}.
+
+\section{Experimental Protocol and Status}
+\paragraph{What is \emph{not} yet measured.} An earlier version of this paper
+reported $100\%$ accuracy, a $0.0\%$ position-flip rate, and a $0.984$ mean
+Brier reward on a five-item set. Those figures were produced by a scripted mock
+that was hard-coded to select the answer the dataset labelled correct; they
+measure nothing about model behaviour and have been removed. On a balanced,
+position-randomised version of the pilot set, the same scripted mock scores only
+$20\%$, which is exactly the point: the old numbers were an artefact of the data
+and the mock, not evidence. We therefore report the end-to-end evaluation
+metrics as \todo{pending real run} and describe the protocol to obtain them.
+
+\paragraph{Tier 1 --- pilot.} A stratified $20$-item pilot (four items each in
+coding, math \& logic, writing \& reasoning, summarization, argumentation) with
+the superior answer placed in position A or B by a fixed seed and a balanced
+$8$/$8$/$4$ split of A/B/Tie labels, so that neither ``always A'' nor ``always
+B'' beats $40\%$. Single run on a free-tier backbone. Status: dataset released;
+run \todo{pending backbone access}.
+
+\paragraph{Tier 2 --- full.} $150$--$300$ items drawn from public preference
+data (e.g.\ MT-Bench / Chatbot Arena \citep{zheng2023}), at least two judge
+backbones, $3$--$5$ repeats reported as mean$\pm$std, with the ablations above.
+The runner (\texttt{run\_benchmark.py}) estimates and confirms API spend before
+issuing any paid call. Status: \todo{pending Tier-2 budget}. The only live
+constraint we hit while preparing this release was that the sandbox used for
+development has no network route to any external LLM provider, so live runs must
+be executed in an environment with provider access.
+
+\section{Discussion}
+\paragraph{Computational cost.} GT-Judge requires roughly $2K$ debate calls plus
+$n$ calibration calls per item versus one call for a single judge; early stopping
+via \emph{concede}, temperature-0 caching, and parallelism mitigate this.
+\paragraph{Correlated priors.} Persona diversity (Correctness, Clarity, Depth)
+reduces---but does not eliminate---shared error, which is precisely why the
+$\neff$ correction of Section~\ref{sec:correlation} operates on top of it rather
+than instead of it.
+
+\section{Limitations}
+First, the end-to-end LLM benchmark has not been run; the headline accuracy,
+flip-rate, and verbosity numbers are pending and are not estimated. Second, the
+$\neff$ correction is validated on synthetic panels with a known $\rho$; its
+benefit on live judge panels, and the best way to estimate $\Sigma$ online,
+remain to be measured. Third, when no per-item correlation estimate is available
+the method falls back to an equicorrelation prior $\rho$, a hyperparameter.
+Fourth, the multi-provider client has been exercised with an OpenAI-style
+interface and unit tests; the Anthropic and Google paths are lazily imported and
+untested against live endpoints here. Finally, the formulation is pairwise;
+listwise ranking and continuous grading are future work.
+
+\section{Conclusion}
+We presented GT-Judge, a training-free game-theoretic multi-agent framework that
+targets position bias, verbosity bias, and sycophancy by structuring evaluation
+as coupled debate, calibration, and arbitration games, and that corrects for
+correlated evaluator errors via an effective-evaluator count. The theory,
+implementation, correctness suite, ablation harness, and a reproducible
+synthetic validation of the correlation correction are complete; the end-to-end
+LLM benchmark is specified but not yet run, and is reported as such.
+
+\section*{Reproducibility and Use of AI Assistance}
+All code, configuration, the pilot dataset, the test suite, and the scripts that
+produce Table~\ref{tab:corr} are released together; the synthetic validation is
+seeded (seed 20260718) and reproducible without any API access. No experimental
+number in this paper was generated by a language model or estimated: quantities
+that require live model calls are marked \todo{pending real run}. AI coding
+assistants were used to help write and refactor code and to draft prose; the
+author reviewed and is responsible for all content. (The precise
+venue-appropriate wording of AI-use disclosure should be re-checked against the
+chosen venue's policy before submission.)
+
+\begin{thebibliography}{9}
+\bibitem[Jung et al.(2025)]{jung2025} Jaehun Jung, Faeze Brahman, and Yejin Choi.
+Trust or Escalate: LLM Judges with Provable Guarantees for Human Agreement.
+\emph{International Conference on Learning Representations (ICLR)}, 2025.
+arXiv:2407.18370.
+
+\bibitem[Kohli(2026)]{kohli2026} Guneet Kohli. Nine Judges, Two Effective Votes:
+Correlated Errors Undermine LLM Evaluation Panels. Apple Machine Learning
+Research, 2026. arXiv:2605.29800.
+
+\bibitem[Prelec(2004)]{prelec2004} Dra\v{z}en Prelec. A Bayesian Truth Serum for
+Subjective Data. \emph{Science}, 306(5695):462--466, 2004.
+
+\bibitem[TrustJudge(2025)]{trustjudge2025} TrustJudge: Inconsistencies of
+LLM-as-a-Judge and How to Alleviate Them. Preprint, 2025. arXiv:2509.21117.
+
+\bibitem[Verga et al.(2024)]{verga2024} Pat Verga et al. Replacing Judges with
+Juries: Evaluating LLM Generations with a Panel of Diverse Models. Preprint,
+2024. arXiv:2404.18796.
+
+\bibitem[Xie et al.(2025)]{xie2025} Yi Xie, Zhanke Zhou, Chentao Cao, Qiyu Niu,
+Liang Liu, and Bo Han. From Debate to Equilibrium: Belief-Driven Multi-Agent LLM
+Reasoning via Bayesian Nash Equilibrium. \emph{International Conference on
+Machine Learning (ICML)}, 2025. arXiv:2506.08292.
+
+\bibitem[Zheng et al.(2023)]{zheng2023} Lianmin Zheng, Wei-Lin Chiang, Ying
+Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng
+Li, Eric P. Xing, Hao Zhang, Joseph E. Gonzalez, and Ion Stoica. Judging
+LLM-as-a-Judge with MT-Bench and Chatbot Arena. \emph{Advances in Neural
+Information Processing Systems (NeurIPS)}, Datasets and Benchmarks Track, 2023.
+arXiv:2306.05685.
+\end{thebibliography}
+
+\end{document}

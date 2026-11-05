@@ -1,0 +1,35 @@
+========================================================================
+  §5 Correlated-Error Correction — synthetic validation (seeded, no LLM)
+========================================================================
+
+(A) n_eff identity check  [implemented vs closed form n/(1+(n-1)rho)]
+      n   rho  implemented  closed_form   ok
+      2  0.00       2.0000       2.0000  yes
+      2  0.30       1.5385       1.5385  yes
+      2  0.60       1.2500       1.2500  yes
+      2  0.90       1.0526       1.0526  yes
+      3  0.00       3.0000       3.0000  yes
+      3  0.30       1.8750       1.8750  yes
+      3  0.60       1.3636       1.3636  yes
+      3  0.90       1.0714       1.0714  yes
+      5  0.00       5.0000       5.0000  yes
+      5  0.30       2.2727       2.2727  yes
+      5  0.60       1.4706       1.4706  yes
+      5  0.90       1.0870       1.0870  yes
+    => identity holds: True
+
+(B) Calibration under correlated errors  (n=3 evaluators, 20k trials)
+      rho  n_eff  ECE_naive  ECE_corr     dECE  ocw_naive  ocw_corr  Brier_nv  Brier_cr
+     0.00   3.00     0.3894    0.3894  +0.0000      0.213     0.213    0.0808    0.0808
+     0.30   1.88     0.3799    0.3303  +0.0496      0.260     0.193    0.1236    0.1203
+     0.60   1.36     0.3917    0.2976  +0.0940      0.291     0.179    0.1525    0.1421
+     0.90   1.07     0.3912    0.2667  +0.1245      0.314     0.169    0.1773    0.1580
+
+    no harm at rho=0 (ECE):        True
+    ECE improves at rho=0.9:       True
+    overconf-on-wrong drops @0.9:  True
+    (ocw = mean overconfidence on WRONG predictions; lower is better.
+     Under a log-odds pool the naive rule is genuinely overconfident,
+     so ECE, overconfidence-on-wrong, AND Brier all improve; at rho=0
+     n_eff=n and the correction is exactly the identity.)
+

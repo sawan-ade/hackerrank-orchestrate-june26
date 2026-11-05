@@ -1,0 +1,39 @@
+==========================================================================
+  Correlation-aware risk control for selective judging (seeded, no LLM)
+==========================================================================
+
+PART A --- validity of the (1-delta) risk bound (isolated)
+  true accepted-error p*=0.1, delta=0.1, n=1200 in clusters of 12, 4000 draws
+   rho | design D | naive miscov | corr miscov |  target
+  ----------------------------------------------------------
+   0.0 |     1.00 |        0.101 |       0.101 |    0.10
+   0.1 |     2.10 |        0.104 |       0.033 |    0.10
+   0.3 |     4.30 |        0.180 |       0.024 |    0.10
+   0.5 |     6.50 |        0.268 |       0.041 |    0.10
+  (miscoverage = fraction of draws where the UCB falls BELOW the true
+   error p*; a valid (1-delta) bound must keep this <= delta.)
+  => corrected bound stays ~<= delta at every rho: True
+
+PART B --- price of a valid certificate (coverage cost)
+  Part A shows the naive (i.i.d.) certificate is INVALID under
+  correlation (miscoverage > delta). Here we report the coverage the
+  design-effect-corrected certificate retains while staying valid, vs
+  the coverage the naive certificate 'buys' only by being invalid.
+  Smooth error-vs-confidence curve; q90 = 90% quantile of deployed
+  accepted-error over splits (the guarantee target is <= alpha=0.1).
+   rho |     method |  valid? |  q90 risk |  coverage
+  ------------------------------------------------------
+   0.0 |      naive |     yes |     0.088 |     0.385
+   0.0 |  corrected |     yes |     0.088 |     0.385
+  ------------------------------------------------------
+   0.3 |      naive |     no* |     0.090 |     0.390
+   0.3 |  corrected |     yes |     0.000 |     0.001
+  ------------------------------------------------------
+   0.5 |      naive |     no* |     0.087 |     0.383
+   0.5 |  corrected |     yes |     0.000 |     0.001
+  ------------------------------------------------------
+  *naive's per-split q90 can look <= alpha here because the threshold
+   SEARCH is multiplicity-controlled, but its CERTIFICATE (the reported
+   risk bound) is still anti-conservative under correlation per Part A;
+   the corrected certificate is honest, at a real coverage cost that
+   grows with rho --- reflecting the genuine information loss (Kohli).

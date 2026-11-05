@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Caches & Test artifacts
+.pytest_cache/
+.mypy_cache/
+
+# Credentials and secrets
+.env
+.env.*
+!.env.example
+*.key
+
+# Submission archives
+*.zip
+*.tar.gz
+
+# LaTeX compilation artifacts
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
