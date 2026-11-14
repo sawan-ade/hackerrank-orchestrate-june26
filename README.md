@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/hero-banner.svg" alt="HackerRank Orchestrate June 2026 Banner" width="100%">
+</p>
+
 # HackerRank Orchestrate (June 2026) — Multi-Modal Evidence Review
 
 [![HackerRank Orchestrate](https://img.shields.io/badge/HackerRank-Orchestrate%20June%202026-orange.svg)](https://www.hackerrank.com/)
@@ -77,6 +81,15 @@ Now, and only now, the text-based logic checker reconciles the objective physica
 
 ### 3. Stage 3 — Risk Decider & Severity Calibration (`code/src/agents/logic_checker.py`)
 Applies Bayesian severity anchors, checks historical repeat-claim counts, and evaluates whether the minimum evidence standard is met.
+
+### 📸 Multi-Modal Ground Truth & Evidence Inspection
+
+The pipeline audits heterogeneous real-world imagery across vehicles, electronics, and shipping parcels:
+
+| Automotive Damage Inspection | Hardware & Electronics Inspection |
+|:---:|:---:|
+| <img src="./assets/sample_vehicle_evidence.jpg" width="400" alt="Vehicle Damage Evidence" /> | <img src="./assets/sample_device_evidence.jpg" width="400" alt="Device Damage Evidence" /> |
+| *Case 003: Blind perception detects rear bumper dent & paint fracture without transcript confirmation bias.* | *Case 001: Text-blind audit isolates screen fracture severity vs. hyperbolic customer phrasing.* |
 
 ---
 
